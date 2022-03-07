@@ -23,7 +23,7 @@ import com.google.android.gms.maps.model.MarkerOptions
 import com.caglar.ktmaps.databinding.ActivityMapsBinding
 import com.google.android.material.snackbar.Snackbar
 
-class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
+class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMapLongClickListener {
 
     private lateinit var mMap: GoogleMap
     private lateinit var binding: ActivityMapsBinding
@@ -32,6 +32,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var permissionLauncher: ActivityResultLauncher<String>
     private lateinit var sharedPreferences: SharedPreferences
     private var trackBoolean: Boolean ?= null
+    private var selectedLatitude: Double ?= null
+    private var selectedLongitude: Double ?= null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,6 +49,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         registerLauncher()
         sharedPreferences = this.getSharedPreferences("com.caglar.ktmaps", MODE_PRIVATE)
         trackBoolean = false
+        selectedLatitude = 0.0
+        selectedLongitude = 0.0
 
     }
 
@@ -61,6 +65,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
      */
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
+        mMap.setOnMapLongClickListener(this)
 
         locationManager = this.getSystemService(LOCATION_SERVICE) as LocationManager //Casting
         locationListener = object : LocationListener {
@@ -124,5 +129,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 Toast.makeText(this@MapsActivity,"Permission needed", Toast.LENGTH_LONG).show()
             }
         }
+    }
+
+    override fun onMapLongClick(p0: LatLng) {
+        mMap.clear() //Clear markers
+        mMap.addMarker(MarkerOptions().position(p0))
+        selectedLatitude = p0.latitude
+        selectedLongitude = p0.longitude
     }
 }
