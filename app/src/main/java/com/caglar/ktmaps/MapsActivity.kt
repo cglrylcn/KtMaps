@@ -1,6 +1,7 @@
 package com.caglar.ktmaps
 
 import android.Manifest
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationListener
@@ -29,6 +30,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var locationManager: LocationManager
     private lateinit var locationListener: LocationListener
     private lateinit var permissionLauncher: ActivityResultLauncher<String>
+    private lateinit var sharedPreferences: SharedPreferences
+    private var trackBoolean: Boolean ?= null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,6 +45,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         mapFragment.getMapAsync(this)
 
         registerLauncher()
+        sharedPreferences = this.getSharedPreferences("com.caglar.ktmaps", MODE_PRIVATE)
+        trackBoolean = false
+
     }
 
     /**
@@ -59,7 +65,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         locationManager = this.getSystemService(LOCATION_SERVICE) as LocationManager //Casting
         locationListener = object : LocationListener {
             override fun onLocationChanged(p0: Location) {
-                println("Location: " + p0.toString())
+                trackBoolean = sharedPreferences.getBoolean("trackBoolean",false)
+                if (!trackBoolean!!) {
+                    val userLocation = LatLng(p0.latitude,p0.longitude)
+//                    mMap.addMarker(MarkerOptions().position(userLocation).title("Location")) //Add marker
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation,15f))
+                    sharedPreferences.edit().putBoolean("trackBoolean",true).apply()
+                }
+
             }
         }
 
@@ -71,18 +84,25 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 }.show()
             }
             else {
+                //Request Permission
                 permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
             }
         }
         else {
             //Permission granted
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,0,0f,locationListener)
+            val lastLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+            if (lastLocation != null) {
+                val lastUserLocation = LatLng(lastLocation.latitude,lastLocation.longitude)
+                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(lastUserLocation,15f))
+            }
+            mMap.isMyLocationEnabled = true
         }
 
         // Add a marker in Sydney and move the camera
-        val sydney = LatLng(48.853915, 2.291315)
-        mMap.addMarker(MarkerOptions().position(sydney).title("Marker in Sydney"))
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(sydney, 15F))
+//        val sydney = LatLng(48.853915, 2.291315)
+//        mMap.addMarker(MarkerOptions().position(sydney).title("Marker in Sydney"))
+//        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(sydney, 15F))
     }
 
     private fun registerLauncher() {
@@ -91,6 +111,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 if (ContextCompat.checkSelfPermission(this,Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                     //Permission Granted
                     locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,0,0f,locationListener)
+                    val lastLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+                    if (lastLocation != null) {
+                        val lastUserLocation = LatLng(lastLocation.latitude,lastLocation.longitude)
+                        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(lastUserLocation,15f))
+                    }
+                    mMap.isMyLocationEnabled = true
                 }
             }
             else {
