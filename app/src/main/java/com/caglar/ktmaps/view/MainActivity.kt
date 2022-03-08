@@ -20,17 +20,18 @@ import io.reactivex.rxjava3.schedulers.Schedulers
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private val compositeDisposable = CompositeDisposable()
+    private lateinit var places: ArrayList<Place>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        places = ArrayList()
 
         val db = Room.databaseBuilder(applicationContext,PlaceDatabase::class.java,"Places").build()
         val placeDao = db.placeDao()
 
-        compositeDisposable.add(
-            placeDao.getAll()
+        compositeDisposable.add(placeDao.getAll()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::handleResponse)
@@ -56,5 +57,10 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }
         return super.onOptionsItemSelected(item)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        compositeDisposable.clear()
     }
 }

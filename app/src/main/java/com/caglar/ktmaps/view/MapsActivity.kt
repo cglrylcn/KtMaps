@@ -33,6 +33,7 @@ import com.google.android.material.snackbar.Snackbar
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.schedulers.Schedulers
+import java.lang.Exception
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMapLongClickListener {
 
@@ -47,7 +48,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMapLon
     private var selectedLongitude: Double ?= null
     private lateinit var db: PlaceDatabase
     private lateinit var placeDao: PlaceDao
-    val compositeDisposable = CompositeDisposable()
+    private val compositeDisposable = CompositeDisposable()
     var placeFromMain : Place ?= null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -62,16 +63,18 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMapLon
         mapFragment.getMapAsync(this)
 
         registerLauncher()
-        sharedPreferences = this.getSharedPreferences("com.caglar.ktmaps", MODE_PRIVATE)
-        trackBoolean = false
         selectedLatitude = 0.0
         selectedLongitude = 0.0
+        binding.saveButton.isEnabled = false
+        sharedPreferences = getSharedPreferences("com.caglar.ktmaps", MODE_PRIVATE)
+        trackBoolean = false
 
-        db = Room.databaseBuilder(applicationContext, PlaceDatabase::class.java, "Places")
+        db = Room.databaseBuilder(
+            applicationContext,
+            PlaceDatabase::class.java, "Places")
 //            .allowMainThreadQueries()
             .build()
         placeDao = db.placeDao()
-
     }
 
     /**
@@ -89,6 +92,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMapLon
 
         val intent = intent
         val info = intent.getStringExtra("info")
+        println(info)
         if (info == "new") {
             binding.saveButton.visibility = View.VISIBLE
             binding.deleteButton.visibility = View.GONE
@@ -101,9 +105,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMapLon
                         val userLocation = LatLng(p0.latitude,p0.longitude)
 //                    mMap.addMarker(MarkerOptions().position(userLocation).title("Location")) //Add marker
                         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation,15f))
-                        sharedPreferences.edit().putBoolean("trackBoolean",true).apply()
+                        sharedPreferences.edit().putBoolean("trackBoolean", true).apply()
                     }
-
                 }
             }
 
@@ -133,10 +136,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMapLon
         else {
             mMap.clear()
             placeFromMain = intent.getSerializableExtra("selectedPlace") as? Place
-            placeFromMain?.let { place ->
-                val latlng = LatLng(place.latitude,place.longitude)
-                mMap.addMarker(MarkerOptions().title(place.name))
-                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latlng,15f))
+            placeFromMain?.let {place ->
+                val latLng = LatLng(placeFromMain!!.latitude, placeFromMain!!.longitude)
+                mMap.addMarker(MarkerOptions().position(latLng).title(place.name))
+                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng,17f))
                 binding.placeText.setText(place.name)
                 binding.saveButton.visibility = View.GONE
                 binding.deleteButton.visibility = View.VISIBLE
@@ -177,6 +180,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMapLon
         mMap.addMarker(MarkerOptions().position(p0))
         selectedLatitude = p0.latitude
         selectedLongitude = p0.longitude
+        binding.saveButton.isEnabled = true
     }
 
     fun save(view : View) {
@@ -198,7 +202,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMapLon
     }
 
     fun delete(view : View) {
-
+        placeFromMain?.let { place ->
+            compositeDisposable.add(
+                placeDao.delete(place)
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe()
+            )
+        }
     }
 
     override fun onDestroy() {

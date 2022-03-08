@@ -15,12 +15,12 @@ class PlaceAdapter(val placeList: List<Place>) : RecyclerView.Adapter<PlaceAdapt
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PlaceHolder {
-        val recyclerRowBinding = RecyclerRowBinding.inflate(LayoutInflater.from(parent.context),parent,false)
+        val recyclerRowBinding: RecyclerRowBinding = RecyclerRowBinding.inflate(LayoutInflater.from(parent.context),parent,false)
         return PlaceHolder(recyclerRowBinding)
     }
 
     override fun onBindViewHolder(holder: PlaceHolder, position: Int) {
-        holder.recyclerRowBinding.recyclerViewTextView.text = placeList[position].name
+        holder.recyclerRowBinding.recyclerViewTextView.setText(placeList[position].name)
         holder.itemView.setOnClickListener {
             val intent = Intent(holder.itemView.context,MapsActivity::class.java)
             intent.putExtra("selectedPlace", placeList[position])
