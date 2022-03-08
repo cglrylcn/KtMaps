@@ -17,7 +17,7 @@
         map:layout_constraintHorizontal_bias="0.4"
         map:layout_constraintStart_toStartOf="parent"
         map:layout_constraintTop_toTopOf="parent"
-        tools:context=".MapsActivity" />
+        tools:context=".view.MapsActivity" />
 
     <EditText
         android:id="@+id/placeText"

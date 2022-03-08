@@ -1,11 +1,11 @@
-package com.caglar.ktmaps
+package com.caglar.ktmaps.view
 
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
+import com.caglar.ktmaps.R
 import com.caglar.ktmaps.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
